@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=10.2
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_VERSION:=15.2
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_HASH:=aaa1223d534c9b700a8bec952d9748ee1977513f178727e1bee520ee000b4f29
+PKG_HASH:=83350ccd35b5b5a0cba6b334c41294ea968158c573940904f00b92f76345314d
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -33,11 +33,11 @@ endef
 define Package/gdb
 $(call Package/gdb/Default)
   TITLE:=GNU Debugger
-  DEPENDS+=+libreadline +libncurses +zlib
+  DEPENDS+=+libreadline +libncurses +zlib +libgmp +libmpfr
 endef
 
 define Package/gdb/description
-GDB, the GNU Project debugger, allows you to see what is going on `inside'
+GDB, the GNU Project debugger, allows you to see what is going on 'inside'
 another program while it executes -- or what another program was doing at the
 moment it crashed.
 endef
@@ -58,11 +58,15 @@ CONFIGURE_ARGS+= \
 	--with-system-zlib \
 	--without-expat \
 	--without-lzma \
+	--without-zstd \
 	--disable-unit-tests \
 	--disable-ubsan \
 	--disable-sim \
 	--disable-werror \
-	--disable-source-highlight
+	--disable-source-highlight \
+	--without-isl \
+	--without-xxhash \
+	--with-libgmp-prefix=$(STAGING_DIR)/usr
 
 CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"

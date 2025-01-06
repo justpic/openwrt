@@ -7,12 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.182
+PKG_VERSION:=0.192
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
-PKG_HASH:=ecc406914edf335f0b7fc084ebe6c460c4d6d5175bfdd6688c1c78d9146b8858
+PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION) \
+                https://mirrors.kernel.org/sourceware/$(PKG_NAME)/$(PKG_VERSION)
+PKG_HASH:=616099beae24aba11f9b63d86ca6cc8d566d968b802391334c91df54eab416b4
 
 PKG_MAINTAINER:=Luiz Angelo Daros de Luca <luizluca@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
@@ -21,7 +22,6 @@ PKG_CPE_ID:=cpe:/a:elfutils_project:elfutils
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
-PKG_USE_MIPS16:=1
 PKG_BUILD_DEPENDS:=!USE_GLIBC:argp-standalone
 
 include $(INCLUDE_DIR)/package.mk
@@ -43,7 +43,7 @@ endef
 
 define Package/libdw
   $(call Package/elfutils/Default)
-  DEPENDS:=+libelf +libbz2
+  DEPENDS:=+libelf +libbz2 +USE_MUSL:musl-fts
   TITLE+= (libdw)
 endef
 
@@ -60,14 +60,38 @@ else
 CONFIGURE_ARGS += --disable-nls
 endif
 
+HOST_CONFIGURE_ARGS += \
+	--disable-shared \
+	--disable-nls \
+	--disable-debuginfod \
+	--disable-libdebuginfod \
+	--without-bzlib \
+	--without-lzma \
+	--without-zstd
+
 CONFIGURE_ARGS += \
 	--program-prefix=eu- \
 	--disable-debuginfod \
 	--disable-libdebuginfod \
+	--without-bzlib \
 	--without-lzma \
 	--without-zstd
 
-TARGET_CFLAGS += -D_GNU_SOURCE -Wno-unused-result -Wno-format-nonliteral
+HOST_CONFIGURE_VARS += \
+	ac_cv_search__obstack_free=yes
+
+CONFIGURE_VARS += \
+	ac_cv_search__obstack_free=yes
+
+TARGET_CFLAGS += \
+	-D_GNU_SOURCE \
+	-Wno-unused-result \
+	-Wno-format-nonliteral
+
+ifneq ($(CONFIG_GCC_USE_VERSION_11),y)
+TARGET_CFLAGS += \
+	-Wno-error=use-after-free
+endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
